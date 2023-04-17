@@ -25,7 +25,7 @@ function interior_point_method(A, b, c; max_iter=100, tol=1e-8)
         end
 
         # Compute the search direction
-        dx, dlambda, ds = compute_newton_direction(A, x, lambda, s) 
+        dx, dlambda, ds = compute_newton_direction(A, x, s, r_p, r_d, r_g) 
 
         # Perform backtracking line search
         t = backtracking_line_search(A, b, c, x, lambda, s, dx, dlambda, ds, alpha, beta)
