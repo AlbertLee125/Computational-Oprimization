@@ -1,3 +1,11 @@
+using MatrixDepot
+using SparseArrays
+using LinearAlgebra
+
+include("backtracking_line_search.jl")
+include("Newton.jl")
+include("Starting_Point_Generator.jl")
+
 function interior_point_method(A, b, c; max_iter=100, tol=1e-8)
     m, n = size(A)
 
