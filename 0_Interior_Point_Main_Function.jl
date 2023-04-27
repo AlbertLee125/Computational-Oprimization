@@ -4,12 +4,11 @@ using LinearAlgebra
 using JuMP
 
 
-include("backtracking_line_search.jl")
-include("Newton.jl")
-include("Starting_Point_Generator.jl")
+include("3_backtracking_line_search.jl")
+include("2_Newton.jl")
+include("1_Starting_Point_Generator.jl")
 
-function interior_point_method(A, b, c; max_iter=100, tol=1e-8)
-
+function interior_point_method(A, b, c; max_iter=1000, tol=1e-8)
 
     m, n = size(A)
 
@@ -35,6 +34,9 @@ function interior_point_method(A, b, c; max_iter=100, tol=1e-8)
 
         # Check the stopping criterion
         if norm(r_p) < tol && norm(r_d) < tol && norm(r_g) < tol
+            println(norm(r_p))
+            println(norm(r_d))
+            println(norm(r_g))
             break
         end
 
@@ -49,6 +51,12 @@ function interior_point_method(A, b, c; max_iter=100, tol=1e-8)
         x .+= t .* dx
         lambda .+= t .* dlambda
         s .+= t .* ds
+
+        if iter_count == 1000
+            println(norm(r_p))
+            println(norm(r_d))
+            println(norm(r_g))
+        end
     end
 
     return x, lambda, s, iter_count
@@ -58,8 +66,9 @@ end
 #Download the Sparse from MatrixDepot
 #If you are putting the matrix, erase MatrixName, put LPnetlib/lp_afiro, LPnetlib/lp_brandy, 
 #LPnetlib/lp_fit1d, LPnetlib/lp_adlittle, LPnetlib/lp_agg, LPnetlib/lp_ganges, LPnetlib/lp_stocfor1, LPnetlib/lp_25fv47, LPnetlib/lpi_chemcom
-md =  mdopen("LPnetlib/lp_afiro")
+md =  mdopen("LPnetlib/lp_chemcom")
 
+println("lp_chemcom")
 
 #converting the LP problem min c^T*x s.t. Ax = b, lo <= x <= hi
 #to an lp in standard form min c^T*x s.t. Ax = b, x >= 0
@@ -72,5 +81,6 @@ c = md.c
 x, lambda, s, iter_count = interior_point_method(A, b, c)
 
 # Print the solution and iteration count
-println("Optimal x = ", x)
+Op_value = c'*x
+println("Optimal value = ", Op_value)
 println("Total iterations = ", iter_count)
