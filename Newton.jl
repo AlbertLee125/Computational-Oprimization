@@ -6,7 +6,7 @@ function compute_newton_direction(A, x, s, r_p, r_d, r_g)
      A' spzeros(n,n) Matrix{Float64}(I,n,n);
       spzeros(n,m) spdiagm(0=>s[:,1]) spdiagm(0=>x[:,1])]
 
-    J_f = lu(J)
+    J_f = lu(J) # LU Decomposition
 
     # Compute the steps 
     m = length(r_p)
@@ -14,7 +14,7 @@ function compute_newton_direction(A, x, s, r_p, r_d, r_g)
 
     # Newton method: Direction in which we perform the line search
     Fc = Array{Float64}([-r_p; -r_d; -r_g])
-    b = J_f\Fc
+    b = J_f\Fc # Check!!
 
     # Split the components of the direction vector
     dx = b[1+m:m+n]

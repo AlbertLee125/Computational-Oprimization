@@ -1,5 +1,5 @@
 function backtracking_line_search(A, b, c, x, lambda, s, dx, dlambda, ds, alpha, beta)
-    t = 1.0 #alpha = 0.01, beta = 0.5
+    t = 1.0 #t = theta, alpha = 0.01, beta = 0.5
     m, n = size(A)
 
     while true
@@ -13,7 +13,7 @@ function backtracking_line_search(A, b, c, x, lambda, s, dx, dlambda, ds, alpha,
             r_d_new = A' * lambda_new + s_new - c
 
             # Check the sufficient decrease condition
-            if norm(r_p_new) <= (1 - alpha * t) * norm(A * x - b) &&
+            if norm(r_p_new) <= (1 - alpha * t) * norm(A * x - b) && # Nocedal & Wright Ch 6.
                norm(r_d_new) <= (1 - alpha * t) * norm(A' * lambda + s - c)
                 break
             end

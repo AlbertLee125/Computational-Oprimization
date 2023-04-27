@@ -15,3 +15,5 @@ function alpha_max(x, dx, hi = 1.0)
 
     return alpha, index
 end
+
+alpha = -x[i]/dx[i]
