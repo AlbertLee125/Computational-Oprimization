@@ -21,7 +21,7 @@ function convert_to_standard_form(A, b, c, hi, lo)
         bs = b
         As = sparse(A)
     end
-  
+
 #    if length(find(hi .!= INFINITY)) != 0
     if (any(hi .!= INFINITY))
 #        Jhigh = find(hi .!= INFINITY);
@@ -41,3 +41,23 @@ function convert_to_standard_form(A, b, c, hi, lo)
 
     return As, bs, cs
 end
+"""
+using MatrixDepot
+using SparseArrays
+using LinearAlgebra
+using JuMP
+
+Problem =  mdopen("LPnetlib/lp_ganges")
+println("Problem = lp_ganges")
+
+A = Problem.A
+b = Problem.b
+c = Problem.c
+hi = Problem.hi
+lo = Problem.lo
+
+As, bs, cs = convert_to_standard_form(A, b, c, hi, lo)
+println(size(As))
+println(size(bs))
+println(size(cs))
+"""

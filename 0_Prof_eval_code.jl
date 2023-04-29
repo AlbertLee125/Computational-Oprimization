@@ -5,9 +5,13 @@ using JuMP
 #using DataStructures
 
 include("3_backtracking_line_search.jl")
-include("2_Newton.jl")
-include("1_Starting_Point_Generator.jl")
+#include("2_Newton.jl")
+include("Newton_QR.jl")
+include("Starting_Point_Generator_NoCholesky.jl")
+#include("1_Starting_Point_Generator.jl")
 include("Convert_to_Standard.jl")
+#include("Shrink_problem.jl") #   Trial for reduling Problem size
+include("brandy_full_rank.jl")
 
 mutable struct IplpSolution
     x::Vector{Float64} # the solution vector 
@@ -67,15 +71,20 @@ norm([As'*lam + s - cs; As*xs - bs; xs.*s])/norm([bs;cs]) <= tol
 and fails if this takes more than maxit iterations.
 """
 
-problem =  mdopen("LPnetlib/lp_stocfor1")
-println("Problem = lp_stocfor1")
+problem_raw =  mdopen("LPnetlib/lp_brandy")
+println("Problem = lp_brandy")
 
-function iplp(Problem; max_iter=100, tol = 1e-8)
-    A = Problem.A
-    b = Problem.b
-    c = Problem.c
-    hi = Problem.hi
-    lo = Problem.lo
+function iplp(problem::IplpProblem; max_iter=100, tol = 1e-8)::IplpSolution
+#function iplp(Problem; max_iter=100, tol = 1e-8)
+
+#   Trial for reduling Problem size
+#    problem =  remove_useless_rows(problem)
+
+    A = problem.A
+    b = problem.b
+    c = problem.c
+    hi = problem.hi
+    lo = problem.lo
 
     m, n = size(A)
 
@@ -116,7 +125,7 @@ function iplp(Problem; max_iter=100, tol = 1e-8)
         dx, dlambda, ds = compute_newton_direction(As, xs, s, r_p, r_d, r_g)
 
         # Perform backtracking line search
-        t = backtracking_line_search(As, bs, c, xs, lambda, s, dx, dlambda, ds, alpha, beta)
+        t = backtracking_line_search(As, bs, cs, xs, lambda, s, dx, dlambda, ds, alpha, beta)
         # What about get output r_p_new, r_d_new ?? --> Test !!
 
         # Update the iterates
@@ -135,70 +144,7 @@ function iplp(Problem; max_iter=100, tol = 1e-8)
     return xs, lambda, s, iter_count, Op_value
 
 
-
-
 end
-
-################################################
-
-function interior_point_method(A, b, c; max_iter=1000, tol=1e-8)
-
-    m, n = size(A)
-
-    # Compute the starting point
-    # To make s > 0 (slack variable)
-    x, lambda, s = starting_point(A, b, c)
-#    println(x)
-
-    # Backtracking line search parameters
-    alpha = 0.01 # approaching variable
-    beta = 0.5 # to reduce alpha
-
-    iter_count = 0
-
-    for iter = 1:max_iter
-        # Increment the iteration count
-        iter_count += 1
-
-        # Compute the residuals
-        r_p = A * x - b #primal
-        r_d = A' * lambda + s - c #dual
-        r_g = x .* s #complementary gap
-
-        # Check the stopping criterion
-        du_tol = r_g/n
-        re_tol = norm([A'*lambda + s - c; A*s - b; x.*s])/norm([b; c]) #########
-        println(du_tol)
-        println(re_tol)
-
-        if du_tol < tol && re_tol < tol
-            println(du_tol)
-            println(re_tol)
-            break
-        end
-
-        # Compute the search direction
-        dx, dlambda, ds = compute_newton_direction(A, x, s, r_p, r_d, r_g)
-
-        # Perform backtracking line search
-        t = backtracking_line_search(A, b, c, x, lambda, s, dx, dlambda, ds, alpha, beta)
-        # What about get output r_p_new, r_d_new ?? --> Test !!
-
-        # Update the iterates
-        x .+= t .* dx
-        lambda .+= t .* dlambda
-        s .+= t .* ds
-
-        if iter_count == 1000
-            println(du_tol)
-            println(re_tol)
-        end
-    end
-
-    return x, lambda, s, iter_count
-end
-
-
 
 
 # Solve the linear programming problem
