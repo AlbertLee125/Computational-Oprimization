@@ -1,46 +1,37 @@
-function convert_to_standard_form(A, b, c, hi, lo)
+function convert_to_standard(A, b, c, hi, lo)
     INFINITY::Float64 = 1.0e308
-#    n = length(Problem.c)
-    n = length(c)
-  
-#    A = Problem.A
     m = size(A,1)
-#    b = Problem.b
-#    c = Problem.c
-#    hi = Problem.hi
-#    lo = Problem.lo
+    n = length(c)
   
     As = sparse(A)
     bs = b
     cs = c
-#    cs = Problem.c
-#    if length(find(lo)) != 0
+    
     if (any(lo .!=0.0))
-        b = b - A*lo
+        bs = b - A*lo
         hi = hi - lo
-        bs = b
         As = sparse(A)
     end
 
-#    if length(find(hi .!= INFINITY)) != 0
     if (any(hi .!= INFINITY))
-#        Jhigh = find(hi .!= INFINITY);
-        Jhigh = findall(hi .!= INFINITY)
-        Vhigh = hi[Jhigh];
-        jh = length(Jhigh);
-        B1 = zeros(m,jh);
-#        B2 = Diagonal(ones(jh));
-        B2 = Matrix{Float64}(I, jh, jh)
-        B3 = zeros(jh,n);
-        B3[:,Jhigh] = B2;
-        As = [A B1;B3 B2];
+        loc_hi = findall(hi .!= INFINITY);
+        val_hi = hi[loc_hi];
+        count_hi = length(loc_hi);
+
+        Aug_1 = zeros(m,count_hi);
+        Aug_2 = Matrix{Float64}(I, count_hi, count_hi)
+        Aug_3 = zeros(count_hi,n);
+        Aug_3[:,loc_hi] = Aug_2;
+
+        As = [A Aug_1;Aug_3 Aug_2];
         As = sparse(As);
-        cs = vec([c; zeros(jh,1)]);
-        bs = vec([b;Vhigh]);
+        bs = vec([b;val_hi]);
+        cs = vec([c; zeros(count_hi,1)]);
     end
 
     return As, bs, cs
 end
+
 """
 using MatrixDepot
 using SparseArrays
@@ -55,9 +46,22 @@ b = Problem.b
 c = Problem.c
 hi = Problem.hi
 lo = Problem.lo
+println("**************")
+println(size(A))
+println(size(c))
+
+println(size(hi))
+println(length(lo))
+println("**************")
+println(typeof(hi))
+println(typeof(A))
+println(typeof(c))
+println("**************")
+
 
 As, bs, cs = convert_to_standard_form(A, b, c, hi, lo)
 println(size(As))
 println(size(bs))
 println(size(cs))
 """
+

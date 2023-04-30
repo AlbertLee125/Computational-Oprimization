@@ -2,16 +2,18 @@ using MatrixDepot
 using SparseArrays
 using LinearAlgebra
 using JuMP
+using Dates
+#using GLPK
+#using Clp
+#using MathProgBase
 #using DataStructures
 
-include("3_backtracking_line_search.jl")
-#include("2_Newton.jl")
-include("Newton_QR.jl")
-include("Starting_Point_Generator_NoCholesky.jl")
-#include("1_Starting_Point_Generator.jl")
 include("Convert_to_Standard.jl")
+include("Starting_Point_Generator_NoCholesky.jl")
+include("Newton.jl")
 #include("Shrink_problem.jl") #   Trial for reduling Problem size
-include("brandy_full_rank.jl")
+#include("brandy_full_rank.jl")
+include("Backtracking_Line_Search.jl")
 
 mutable struct IplpSolution
     x::Vector{Float64} # the solution vector 
@@ -71,10 +73,7 @@ norm([As'*lam + s - cs; As*xs - bs; xs.*s])/norm([bs;cs]) <= tol
 and fails if this takes more than maxit iterations.
 """
 
-problem_raw =  mdopen("LPnetlib/lp_brandy")
-println("Problem = lp_brandy")
-
-function iplp(problem::IplpProblem; max_iter=100, tol = 1e-8)::IplpSolution
+function iplp(problem; max_iter=150, tol = 1e-8)
 #function iplp(Problem; max_iter=100, tol = 1e-8)
 
 #   Trial for reduling Problem size
@@ -87,8 +86,10 @@ function iplp(problem::IplpProblem; max_iter=100, tol = 1e-8)::IplpSolution
     lo = problem.lo
 
     m, n = size(A)
-
-    As, bs, cs = convert_to_standard_form(A, b, c, hi, lo)
+    flag = false
+    
+    timestamp_initial = now()
+    As, bs, cs = convert_to_standard(A, b, c, hi, lo)
 
     # Compute the starting point
     # To make s > 0 (slack variable)
@@ -96,7 +97,7 @@ function iplp(problem::IplpProblem; max_iter=100, tol = 1e-8)::IplpSolution
 
     # Backtracking line search parameters
     alpha = 0.01 # approaching variable
-    beta = 0.5 # to reduce alpha
+    beta = 0.55 # to reduce alpha
 
     iter_count = 0
 
@@ -112,12 +113,15 @@ function iplp(problem::IplpProblem; max_iter=100, tol = 1e-8)::IplpSolution
         # Check the stopping criterion
         du_tol = norm(r_g)/n
         re_tol = norm([r_d; r_p; r_g])/norm([bs; cs]) #########
-        println(du_tol)
-        println(re_tol)
+        #println(du_tol)
+        #println(re_tol)
 
         if (du_tol < tol && re_tol < tol)
+            timestamp_later = now()
+            flag = true
             println(du_tol)
             println(re_tol)
+            println(timestamp_later-timestamp_initial)
             break
         end
 
@@ -139,18 +143,23 @@ function iplp(problem::IplpProblem; max_iter=100, tol = 1e-8)::IplpSolution
         end
     end
 
-    Op_value = cs'*xs
+#    Op_value = cs'*xs
 
-    return xs, lambda, s, iter_count, Op_value
-
-
+    return IplpSolution(vec(xs[1:n]+lo),flag,vec(cs),sparse(As),vec(bs),vec(xs),vec(lambda),vec(s)), iter_count
+    #return xs, lambda, s, iter_count, Op_value
 end
 
 
+
+problem =  mdopen("LPnetlib/lp_afiro")
+println("Problem = lp_afiro")
+
 # Solve the linear programming problem
-#x, lambda, s, iter_count = interior_point_method(A, b, c)
-xs, lambda, s, iter_count, Op_value = iplp(problem)
+#xs, lambda, s, iter_count, Op_value = iplp(problem)
+solution, iter_count = iplp(problem)
 
 # Print the solution and iteration count
-println("Optimal value = ", Op_value)
+#println("Optimal value = ", Op_value)
+#println("Total iterations = ", iter_count)
+println("Optimal value = ", solution.cs'*solution.xs)
 println("Total iterations = ", iter_count)

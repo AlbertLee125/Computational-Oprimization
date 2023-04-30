@@ -10,12 +10,12 @@ function compute_newton_direction(A, x, s, r_p, r_d, r_g)
     Fc = Array{Float64}([-r_p; -r_d; -r_g])
 
     # 1. LU decomposition
-#    J_f = lu(J)
-#    b = J_f \ Fc
+    J_f = lu(J)
+    b = J_f \ Fc
     
     # 2. QR decomposition
-    Q, R = qr(Matrix(J))
-    b = R \ (Q' * Fc)
+#    Q, R = qr(Matrix(J))
+#    b = R \ (Q' * Fc)
 
     # Compute the steps 
     m = length(r_p)
